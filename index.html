@@ -1,1 +1,1234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Jardin d'Épices — Menu & Commande</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,500;1,700&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* ═══════════════════════════════════════
+   CSS VARIABLES — easily customizable
+═══════════════════════════════════════ */
+:root{
+  --bg:#0f0d0a;--bg2:#1a1712;--bg3:#252218;--card:#1e1b14;
+  --border:rgba(212,175,55,.15);
+  --accent:#d4af37;--accent2:#e8c84a;--accent-dim:rgba(212,175,55,.12);
+  --red:#c0392b;--green:#27ae60;
+  --text:#f5f0e8;--text2:#b8a88a;--text3:#7a6e5a;
+  --radius:14px;--r-sm:8px;
+  --font-display:'Playfair Display',serif;
+  --font-body:'Syne',sans-serif;
+}
+html.light{
+  --bg:#faf7f2;--bg2:#f0ece3;--bg3:#e5dfd4;--card:#ffffff;
+  --border:rgba(150,110,20,.15);
+  --text:#1a1612;--text2:#5a4e38;--text3:#9a8e78;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;transition:background .3s,color .3s;}
 
+/* ── GRAIN OVERLAY ── */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity:.4;}
+
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:200;background:rgba(15,13,10,.92);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);padding:0 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;height:64px;gap:10px;transition:background .3s;}
+html.light nav{background:rgba(250,247,242,.94);}
+
+/* Logo — SVG generated */
+.logo-svg-wrap{display:flex;align-items:center;gap:10px;flex-shrink:0;cursor:pointer;}
+.logo-name{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--accent);letter-spacing:.3px;line-height:1.1;}
+.logo-sub{font-size:8px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;}
+
+.nav-center{flex:1;display:flex;justify-content:center;}
+.wifi-pill{position:relative;display:inline-flex;align-items:center;gap:6px;padding:5px 14px;
+  border-radius:20px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;user-select:none;transition:border-color .2s;}
+.wifi-pill:hover{border-color:var(--accent);}
+.wifi-lbl{font-size:11px;color:var(--text2);font-weight:500;}
+.wifi-popup{position:absolute;top:calc(100%+10px);left:50%;transform:translateX(-50%);width:240px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;
+  box-shadow:0 12px 40px rgba(0,0,0,.4);display:none;z-index:300;}
+.wifi-popup.open{display:block;}
+.wifi-popup::before{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+  width:10px;height:10px;background:var(--card);border-left:1px solid var(--border);border-top:1px solid var(--border);rotate:45deg;}
+.wlbl{font-size:9px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:.5rem;}
+.wrow{margin-bottom:.6rem;}
+.wkey{font-size:9px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px;}
+.wval{font-size:14px;font-weight:600;color:var(--text);}
+.wpass-row{display:flex;align-items:center;gap:7px;}
+.wpass-val{font-size:14px;font-weight:600;color:var(--text);letter-spacing:2px;flex:1;}
+.eye-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:3px;}
+.eye-btn:hover{color:var(--accent);}
+
+.nav-right{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.lang-btn{padding:4px 8px;border-radius:16px;border:1px solid var(--border);background:transparent;
+  color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--font-body);
+  transition:all .2s;letter-spacing:.5px;}
+.lang-btn.active{background:var(--accent);color:#0f0d0a;border-color:var(--accent);}
+.lang-btn:hover:not(.active){border-color:var(--accent);color:var(--accent);}
+.theme-toggle{display:flex;align-items:center;gap:3px;padding:3px 6px;border-radius:20px;
+  background:var(--bg3);border:1px solid var(--border);cursor:pointer;}
+.tt-track{width:26px;height:14px;border-radius:7px;background:var(--accent);position:relative;}
+.tt-thumb{position:absolute;top:1px;left:1px;width:12px;height:12px;border-radius:50%;background:#0f0d0a;transition:transform .3s;}
+html.light .tt-thumb{transform:translateX(12px);}
+.t-ico{font-size:11px;user-select:none;}
+
+/* ── HERO ── */
+.hero{padding:5rem 2rem 4rem;text-align:center;position:relative;overflow:hidden;
+  background:radial-gradient(ellipse 70% 60% at 50% 0%,rgba(212,175,55,.08) 0%,transparent 70%);}
+.hero-sup{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--accent);
+  margin-bottom:1.2rem;font-weight:600;}
+.hero h1{font-family:var(--font-display);font-size:clamp(2.8rem,8vw,5rem);font-weight:900;
+  line-height:1.05;margin-bottom:.8rem;letter-spacing:-1px;}
+.hero h1 em{font-style:italic;color:var(--accent);}
+.hero-desc{font-size:13px;color:var(--text2);max-width:480px;margin:0 auto 2.5rem;line-height:1.7;font-weight:400;}
+.hero-pills{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:2.5rem;}
+.hero-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:20px;
+  border:1px solid var(--border);font-size:10px;color:var(--text2);font-weight:600;letter-spacing:.5px;
+  background:var(--accent-dim);}
+.hero-pill.gold{color:var(--accent);border-color:rgba(212,175,55,.35);}
+.hero-divider{width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);margin:0 auto;}
+
+/* ── SECTIONS ── */
+section{padding:2rem 1.5rem;border-bottom:1px solid var(--border);position:relative;z-index:1;}
+.sec-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);
+  font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:8px;}
+.sec-label::before{content:'';width:20px;height:1px;background:var(--accent);}
+
+/* ── INFO CARDS ── */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:8px;}
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1rem;transition:border-color .2s,transform .2s;}
+.info-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.ic-icon{width:34px;height:34px;border-radius:var(--r-sm);background:var(--accent-dim);
+  display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:.6rem;}
+.ic-lbl{font-size:9px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:2px;font-weight:600;}
+.ic-val{font-size:12px;color:var(--text);font-weight:500;line-height:1.5;}
+.ic-val a{color:var(--accent);text-decoration:none;}
+.badge-open{display:inline-block;padding:2px 7px;border-radius:20px;background:rgba(39,174,96,.12);
+  color:var(--green);font-size:9px;font-weight:700;letter-spacing:.5px;}
+
+/* ── HOURS ── */
+.hours-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.hr-row{display:flex;justify-content:space-between;padding:6px 10px;border-radius:var(--r-sm);
+  background:var(--bg2);font-size:11px;}
+.hr-row.today{background:var(--accent-dim);border:1px solid rgba(212,175,55,.25);}
+.hr-day{color:var(--text2);}
+.hr-time{color:var(--text);font-weight:500;}
+
+/* ── BRANCHES ── */
+.branches-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;}
+@media(max-width:480px){.branches-grid{grid-template-columns:1fr;}}
+.branch-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);
+  padding:1rem;cursor:pointer;transition:all .2s;}
+.branch-card:hover,.branch-card.selected{border-color:var(--accent);background:var(--accent-dim);}
+.b-tag{display:inline-block;padding:2px 8px;border-radius:10px;background:var(--accent-dim);
+  color:var(--accent);font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:.5rem;}
+.b-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.b-addr{font-size:10px;color:var(--text2);line-height:1.5;}
+.b-cta{font-size:9px;color:var(--accent);font-weight:600;margin-top:.5rem;letter-spacing:.5px;}
+.loc-card{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);}
+.loc-map-wrap{height:240px;background:var(--bg2);}
+.loc-footer{padding:.9rem 1.2rem;border-top:1px solid var(--border);display:flex;
+  align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:var(--card);}
+.loc-main{font-size:13px;font-weight:600;}
+.loc-sub{font-size:10px;color:var(--text2);}
+.gmaps-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:10px;
+  background:var(--accent);color:#0f0d0a;font-size:10px;font-weight:800;text-decoration:none;
+  transition:opacity .2s;border:none;cursor:pointer;white-space:nowrap;letter-spacing:.5px;}
+.gmaps-btn:hover{opacity:.85;}
+
+/* ── BOOKING ── */
+.booking-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px;margin-bottom:1rem;}
+.bf label{font-size:9px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;
+  display:block;margin-bottom:4px;font-weight:600;}
+.bf input,.bf select{width:100%;padding:8px 11px;border-radius:var(--r-sm);border:1px solid var(--border);
+  background:var(--bg2);color:var(--text);font-size:12px;font-family:var(--font-body);outline:none;transition:border-color .2s;}
+.bf input:focus,.bf select:focus{border-color:var(--accent);}
+.book-btn{padding:.7rem 2rem;border-radius:10px;border:none;background:var(--accent);
+  color:#0f0d0a;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-body);letter-spacing:.5px;}
+.book-btn:hover{opacity:.88;}
+
+/* ── MENU ── */
+.menu-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.2rem;}
+.cat-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;
+  color:var(--text3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-body);
+  white-space:nowrap;letter-spacing:.5px;transition:all .2s;}
+.cat-btn.active{background:var(--accent);color:#0f0d0a;border-color:var(--accent);}
+.cat-btn:hover:not(.active){border-color:var(--accent);color:var(--accent);}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:8px;}
+.menu-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:.9rem;display:flex;justify-content:space-between;align-items:flex-start;transition:all .2s;}
+.menu-item:hover{border-color:rgba(212,175,55,.4);transform:translateY(-1px);}
+.menu-item.in-cart{border-color:var(--accent);background:var(--accent-dim);}
+.mi-left{flex:1;cursor:pointer;}
+.mi-name{font-size:12px;font-weight:700;margin-bottom:2px;transition:color .2s;line-height:1.3;}
+.mi-left:hover .mi-name{color:var(--accent);}
+.mi-desc{font-size:10px;color:var(--text3);line-height:1.4;}
+.mi-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:8px;flex-shrink:0;}
+.mi-price{font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap;}
+.add-btn{width:24px;height:24px;border-radius:6px;border:none;background:var(--accent);
+  color:#0f0d0a;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.add-btn:hover{transform:scale(1.12);}
+.qty-ctrl{display:flex;align-items:center;gap:4px;}
+.qty-btn{width:22px;height:22px;border-radius:5px;border:1px solid var(--border);background:var(--bg2);
+  color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.qty-num{font-size:12px;font-weight:700;min-width:14px;text-align:center;}
+
+/* ── REVIEWS ── */
+.rating-summary{display:flex;align-items:center;gap:1.5rem;background:var(--card);
+  border-radius:var(--radius);padding:1.2rem;border:1px solid var(--border);margin-bottom:1.2rem;flex-wrap:wrap;}
+.r-big{text-align:center;flex-shrink:0;}
+.r-num{font-family:var(--font-display);font-size:3.5rem;font-weight:900;color:var(--accent);line-height:1;}
+.r-stars{font-size:1rem;margin:.2rem 0;}
+.r-count{font-size:9px;color:var(--text3);letter-spacing:.5px;}
+.r-bars{flex:1;min-width:140px;}
+.r-bar-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.r-bar-lbl{font-size:10px;color:var(--text2);width:8px;text-align:right;flex-shrink:0;}
+.r-bar-track{flex:1;height:5px;border-radius:3px;background:var(--bg3);overflow:hidden;}
+.r-bar-fill{height:100%;border-radius:3px;background:var(--accent);}
+.r-bar-n{font-size:9px;color:var(--text3);width:18px;flex-shrink:0;}
+.reviews-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:9px;}
+.rv-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1rem;transition:border-color .2s,transform .2s;}
+.rv-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.rv-hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:.7rem;}
+.rv-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--red));
+  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#0f0d0a;flex-shrink:0;font-family:var(--font-display);}
+.rv-nm{font-size:12px;font-weight:700;color:var(--text);}
+.rv-guide{font-size:9px;color:var(--text3);}
+.rv-stars{font-size:10px;margin:.2rem 0;}
+.rv-date{font-size:9px;color:var(--text3);}
+.rv-txt{font-size:11px;color:var(--text2);line-height:1.65;margin-bottom:.7rem;}
+.rv-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.rv-tag{font-size:9px;padding:2px 7px;border-radius:20px;background:var(--accent-dim);
+  border:1px solid rgba(212,175,55,.2);color:var(--accent);font-weight:600;}
+.write-review-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:20px;
+  border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;
+  font-weight:700;cursor:pointer;font-family:var(--font-body);text-decoration:none;transition:all .2s;letter-spacing:.5px;}
+.write-review-btn:hover{background:var(--accent);color:#0f0d0a;}
+
+/* ── PRODUCT MODAL ── */
+.prod-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;
+  align-items:center;justify-content:center;padding:1rem;}
+.prod-overlay.open{display:flex;}
+.prod-modal{background:var(--card);border-radius:20px;width:100%;max-width:400px;max-height:85vh;
+  overflow-y:auto;border:1px solid var(--border);box-shadow:0 24px 60px rgba(0,0,0,.5);animation:slideUp .22s ease;}
+@keyframes slideUp{from{transform:translateY(28px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.pm-img{width:100%;height:180px;border-radius:20px 20px 0 0;background:linear-gradient(135deg,var(--bg3),var(--bg2));
+  display:flex;align-items:center;justify-content:center;}
+.pm-emoji{font-size:4.5rem;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));}
+.pm-body{padding:1.3rem;}
+.pm-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.4rem;}
+.pm-name{font-family:var(--font-display);font-size:17px;font-weight:700;line-height:1.2;flex:1;margin-right:8px;}
+.pm-price-badge{background:var(--accent-dim);border:1px solid rgba(212,175,55,.3);color:var(--accent);
+  font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.pm-cat{display:inline-block;background:var(--bg2);color:var(--text3);font-size:9px;font-weight:700;
+  padding:2px 8px;border-radius:10px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:.7rem;}
+.pm-desc{font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:.9rem;}
+.pm-ing-lbl{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);margin-bottom:.4rem;}
+.pm-ings{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:1.1rem;}
+.pm-ing{background:var(--bg2);border:1px solid var(--border);color:var(--text2);font-size:9px;padding:2px 8px;border-radius:20px;}
+.pm-footer{display:flex;gap:9px;}
+.pm-close{padding:.65rem .9rem;border-radius:11px;border:1px solid var(--border);background:var(--bg2);
+  color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font-body);}
+.pm-add{flex:1;padding:.65rem;border-radius:11px;border:none;background:var(--accent);color:#0f0d0a;
+  font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);letter-spacing:.5px;}
+
+/* ── CART BAR ── */
+.cart-bar{position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--accent);
+  padding:.9rem 1.5rem;display:none;align-items:center;justify-content:space-between;cursor:pointer;}
+.cart-bar.visible{display:flex;}
+.cart-bar:hover{opacity:.92;}
+.cart-badge{background:rgba(0,0,0,.2);color:#0f0d0a;border-radius:7px;padding:2px 9px;font-size:12px;font-weight:700;}
+.cart-bar-lbl{color:#0f0d0a;font-size:13px;font-weight:600;}
+.cart-bar-tot{color:#0f0d0a;font-size:13px;font-weight:800;}
+
+/* ── CART MODAL ── */
+.cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:400;display:none;align-items:flex-end;justify-content:center;}
+.cart-overlay.open{display:flex;}
+.cart-modal{background:var(--bg);border-radius:20px 20px 0 0;width:100%;max-width:580px;max-height:85vh;overflow-y:auto;padding:1.4rem;border-top:1px solid var(--border);}
+.cart-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;}
+.cart-title{font-family:var(--font-display);font-size:16px;font-weight:700;}
+.close-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.cart-item{display:flex;align-items:center;justify-content:space-between;padding:.65rem 0;border-bottom:1px solid var(--border);}
+.ci-name{font-size:12px;font-weight:600;}
+.ci-price{font-size:10px;color:var(--text2);}
+.ci-right{display:flex;align-items:center;gap:7px;}
+.ci-total{font-size:12px;font-weight:700;color:var(--accent);min-width:46px;text-align:right;}
+.cart-sum{padding:.9rem 0;border-top:1px solid var(--border);margin-top:.4rem;}
+.cs-row{display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:12px;color:var(--text2);}
+.cs-final{display:flex;justify-content:space-between;font-size:15px;font-weight:700;margin-top:.5rem;}
+.checkout-btn{width:100%;margin-top:.9rem;padding:.85rem;border-radius:12px;border:none;
+  background:var(--accent);color:#0f0d0a;font-size:13px;font-weight:700;cursor:pointer;
+  font-family:var(--font-body);letter-spacing:.5px;}
+.empty-cart{text-align:center;padding:2rem;color:var(--text2);font-size:13px;}
+
+/* ── CHECKOUT MODAL ── */
+.pay-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:600;display:none;align-items:center;justify-content:center;padding:1rem;}
+.pay-overlay.open{display:flex;}
+.pay-modal{background:var(--bg);border-radius:20px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;border:1px solid var(--border);box-shadow:0 20px 50px rgba(0,0,0,.5);}
+.pay-steps{display:flex;align-items:center;padding:1rem 1.3rem .3rem;}
+.pay-step{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.pay-step span{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);background:var(--bg2);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text3);transition:all .3s;}
+.pay-step.active span{background:var(--accent);border-color:var(--accent);color:#0f0d0a;}
+.pay-step.done span{background:var(--green);border-color:var(--green);color:#fff;}
+.step-lbl{font-size:8px;color:var(--text3);font-weight:600;white-space:nowrap;letter-spacing:.5px;}
+.pay-step.active .step-lbl{color:var(--accent);}
+.step-line{flex:1;height:2px;background:var(--border);margin:0 4px;margin-bottom:11px;transition:background .3s;}
+.step-line.done{background:var(--green);}
+.pay-hdr{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.3rem;border-bottom:1px solid var(--border);}
+.pay-hdr-title{font-family:var(--font-display);font-size:15px;font-weight:700;}
+.pay-body{padding:1.1rem 1.3rem;}
+.pay-sum{background:var(--bg2);border-radius:10px;padding:.85rem;margin-bottom:1.1rem;font-size:11px;}
+.ps-row{display:flex;justify-content:space-between;color:var(--text2);margin-bottom:2px;}
+.pi-row{display:flex;justify-content:space-between;font-size:10px;color:var(--text2);padding:2px 0;}
+.pay-hr{border:none;border-top:1px solid var(--border);margin:.5rem 0;}
+.pay-tot-row{display:flex;justify-content:space-between;font-size:13px;font-weight:700;}
+.pay-method-lbl{font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:.6rem;font-weight:700;}
+.pay-methods-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:.9rem;}
+.pay-method-btn{padding:.65rem .4rem;border-radius:11px;border:2px solid var(--border);background:var(--card);cursor:pointer;text-align:center;transition:all .2s;font-family:var(--font-body);}
+.pay-method-btn:hover{border-color:var(--accent);}
+.pay-method-btn.active{border-color:var(--accent);background:var(--accent-dim);}
+.pay-mico{font-size:1.4rem;display:block;margin-bottom:2px;}
+.pay-mnm{font-size:10px;font-weight:700;color:var(--text);letter-spacing:.3px;}
+.pay-field{margin-bottom:.8rem;}
+.pay-field label{font-size:9px;color:var(--text3);display:block;margin-bottom:4px;font-weight:700;letter-spacing:.5px;}
+.pay-field-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.pay-input{width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid var(--border);
+  background:var(--bg2);color:var(--text);font-size:12px;font-family:var(--font-body);outline:none;transition:border-color .2s;}
+.pay-input:focus{border-color:var(--accent);}
+.pay-iw{position:relative;}
+.pay-iico{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.4;pointer-events:none;}
+.pay-secure{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--green);margin-bottom:.8rem;}
+.card-logos{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.8rem;}
+.c-logo{height:18px;padding:2px 5px;border-radius:3px;background:#fff;border:1px solid #ddd;font-size:9px;font-weight:700;display:flex;align-items:center;}
+.pay-cash-info{background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.2);border-radius:10px;padding:.9rem;font-size:11px;color:var(--text2);line-height:1.6;}
+.pay-cash-info strong{color:var(--accent);}
+.pay-confirm-btn{width:100%;margin-top:.9rem;padding:.9rem;border-radius:12px;border:none;
+  background:var(--accent);color:#0f0d0a;font-size:13px;font-weight:700;cursor:pointer;
+  font-family:var(--font-body);letter-spacing:.5px;}
+.pay-back-btn{padding:.65rem .9rem;border-radius:11px;border:1px solid var(--border);
+  background:var(--bg2);color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font-body);white-space:nowrap;}
+.pay-back-btn:hover{border-color:var(--accent);}
+.pay-error{background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.25);border-radius:8px;
+  padding:7px 11px;font-size:10px;color:#e74c3c;margin-bottom:.7rem;display:none;}
+.ck-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ck-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);
+  padding:1.1rem 1rem;text-align:center;cursor:pointer;transition:all .2s;}
+.ck-card:hover{border-color:var(--accent);transform:translateY(-1px);}
+.ck-card.selected{border-color:var(--accent);background:var(--accent-dim);}
+.ck-ico{font-size:1.8rem;margin-bottom:.4rem;}
+.ck-title{font-size:12px;font-weight:700;margin-bottom:.2rem;}
+.ck-desc{font-size:10px;color:var(--text2);}
+.ck-sub-opt{flex:1;padding:9px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);text-align:center;cursor:pointer;transition:all .2s;}
+.ck-sub-opt.selected{border-color:var(--accent);background:var(--accent-dim);}
+.tbl-row{display:flex;gap:6px;flex-wrap:wrap;}
+.tbl-btn{width:40px;height:40px;border-radius:9px;border:1px solid var(--border);background:var(--bg2);
+  color:var(--text);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;font-family:var(--font-body);}
+.tbl-btn.selected{background:var(--accent);color:#0f0d0a;border-color:var(--accent);}
+.locate-btn{display:flex;align-items:center;gap:5px;padding:7px 11px;border-radius:10px;
+  border:1.5px solid var(--accent);background:var(--accent-dim);color:var(--accent);
+  font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-body);white-space:nowrap;}
+.loc-save-btn{width:100%;padding:.7rem;border-radius:10px;border:none;background:var(--accent);
+  color:#0f0d0a;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);margin-bottom:7px;}
+.loc-save-btn:disabled{background:var(--bg3);color:var(--text3);cursor:not-allowed;}
+
+/* ── WIFI BLOCK MODAL ── */
+.wifi-block{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:650;display:none;align-items:center;justify-content:center;padding:1rem;}
+.wifi-block-box{background:var(--card);border-radius:20px;width:100%;max-width:360px;padding:2rem;text-align:center;border:1px solid var(--border);}
+.wbb-ico{font-size:3rem;margin-bottom:.8rem;}
+.wbb-title{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--accent);margin-bottom:.5rem;}
+.wbb-txt{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:1.5rem;}
+.wbb-btn{padding:.75rem 2rem;border-radius:10px;border:none;background:var(--accent);color:#0f0d0a;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-body);}
+
+/* ── SUCCESS ── */
+.success-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:700;display:none;align-items:center;justify-content:center;padding:1.5rem;}
+.success-overlay.open{display:flex;}
+.success-modal{background:var(--bg);border-radius:20px;padding:2rem;text-align:center;max-width:340px;width:100%;border:1px solid var(--border);}
+.s-ico{font-size:2.8rem;margin-bottom:.7rem;}
+.s-title{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:.4rem;color:var(--accent);}
+.s-msg{font-size:12px;color:var(--text2);margin-bottom:1.3rem;line-height:1.6;white-space:pre-line;}
+.s-close{padding:.65rem 1.8rem;border-radius:10px;border:none;background:var(--accent);color:#0f0d0a;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);}
+
+/* ── ADMIN MODAL ── */
+.admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:900;display:none;align-items:center;justify-content:center;padding:1rem;}
+.admin-overlay.open{display:flex;}
+.admin-modal{background:var(--card);border-radius:20px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border:2px solid var(--accent);box-shadow:0 20px 60px rgba(212,175,55,.2);}
+.adm-login{padding:2.5rem;text-align:center;}
+.adm-dashboard{display:none;}
+.adm-header{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:10;}
+.adm-tabs{display:flex;border-bottom:1px solid var(--border);}
+.adm-tab{flex:1;padding:.65rem;border:none;background:transparent;color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-body);letter-spacing:.5px;transition:all .2s;}
+.adm-tab.active{background:var(--accent);color:#0f0d0a;}
+.adm-tab-content{padding:1.2rem 1.4rem;display:none;}
+.adm-tab-content.active{display:block;}
+.order-card{background:var(--bg2);border-radius:12px;padding:1rem;margin-bottom:.7rem;border:1px solid var(--border);}
+.order-card.new-order{border-color:var(--accent);}
+
+/* ── FOOTER ── */
+footer{text-align:center;padding:1.5rem;padding-bottom:80px;font-size:10px;color:var(--text3);position:relative;z-index:1;}
+footer b{color:var(--accent);}
+
+/* ── POWERED BY badge ── */
+.powered-by{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;
+  border:1px solid var(--border);font-size:9px;color:var(--text3);margin-top:.5rem;letter-spacing:.5px;}
+.powered-by span{color:var(--accent);font-weight:700;}
+
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+#theme-fade{position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:0;background:var(--bg);transition:opacity .22s;}
+#theme-fade.fading{opacity:1;}
+</style>
+</head>
+<body>
+<div id="theme-fade"></div>
+
+<!-- ═══ NAV ═══ -->
+<nav>
+  <div class="logo-svg-wrap" id="logo-wrap">
+    <!-- Generated SVG Logo -->
+    <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="19" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+      <circle cx="20" cy="20" r="14" fill="#d4af37" opacity=".12"/>
+      <text x="20" y="16" text-anchor="middle" font-family="serif" font-size="10" fill="#d4af37" font-weight="bold">🌿</text>
+      <path d="M8 26 Q20 22 32 26" stroke="#d4af37" stroke-width="1" fill="none" opacity=".6"/>
+      <text x="20" y="33" text-anchor="middle" font-family="serif" font-size="5" fill="#d4af37" letter-spacing="1">ÉPICES</text>
+    </svg>
+    <div>
+      <div class="logo-name" id="resto-name">Le Jardin d'Épices</div>
+      <div class="logo-sub" id="resto-tagline">Restaurant · Café · Bar</div>
+    </div>
+  </div>
+  <div class="nav-center">
+    <div class="wifi-pill" id="wifi-widget" onclick="toggleWifi()">
+      <span>📶</span><span class="wifi-lbl">WiFi</span>
+      <div class="wifi-popup" id="wifi-popup">
+        <div class="wlbl">WiFi du Restaurant</div>
+        <div class="wrow"><div class="wkey">Réseau</div><div class="wval" id="wifi-ssid">JardinEpices_WiFi</div></div>
+        <div class="wrow">
+          <div class="wkey">Mot de passe</div>
+          <div class="wpass-row">
+            <div class="wpass-val" id="wifi-pass-display">••••••••••••</div>
+            <button class="eye-btn" onclick="toggleWifiPass(event)"><span id="eye-ico">👁</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <button class="lang-btn active" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <span class="t-ico">☀️</span>
+      <div class="tt-track"><div class="tt-thumb"></div></div>
+      <span class="t-ico">🌙</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<div class="hero">
+  <div class="hero-sup" id="hero-sup">Restaurant & Café</div>
+  <h1 id="hero-h1">Saveurs<br><em>Authentiques</em></h1>
+  <p class="hero-desc" id="hero-desc">Une expérience culinaire unique au cœur de la ville. Cuisine traditionnelle revisitée, boissons artisanales et ambiance chaleureuse.</p>
+  <div class="hero-pills">
+    <div class="hero-pill gold" id="hp-followers">⭐ 4,8 — 312 avis</div>
+    <div class="hero-pill" id="hp-delivery">🛵 Livraison gratuite</div>
+    <div class="hero-pill" id="hp-open">🕐 Ouvert jusqu'à 00:00</div>
+    <div class="hero-pill" id="hp-price">💰 30–150 MAD / pers.</div>
+  </div>
+  <div class="hero-divider"></div>
+</div>
+
+<!-- ═══ INFORMATIONS ═══ -->
+<section>
+  <div class="sec-label">Informations</div>
+  <div class="info-grid">
+    <div class="info-card"><div class="ic-icon">📞</div><div class="ic-lbl">Téléphone</div><div class="ic-val"><a href="tel:+212600000000" id="info-phone">06 00 00 00 00</a></div></div>
+    <div class="info-card"><div class="ic-icon">📍</div><div class="ic-lbl">Adresse</div><div class="ic-val" id="info-addr">12 Rue des Épices, Médina</div></div>
+    <div class="info-card"><div class="ic-icon">📱</div><div class="ic-lbl">Instagram</div><div class="ic-val"><a href="#" id="info-insta">@jardinepices</a></div></div>
+    <div class="info-card"><div class="ic-icon">🕐</div><div class="ic-lbl">Horaires</div><div class="ic-val">Tous les jours &nbsp;<span class="badge-open">Ouvert</span></div></div>
+    <div class="info-card"><div class="ic-icon">💳</div><div class="ic-lbl">Paiement</div><div class="ic-val">Carte &amp; Espèces</div></div>
+    <div class="info-card"><div class="ic-icon">🌿</div><div class="ic-lbl">Cuisine</div><div class="ic-val" id="info-cuisine">Marocaine · Méditerranéenne</div></div>
+  </div>
+</section>
+
+<!-- ═══ HORAIRES ═══ -->
+<section>
+  <div class="sec-label">Horaires</div>
+  <div class="hours-grid" id="hours-grid"></div>
+</section>
+
+<!-- ═══ LOCALISATION ═══ -->
+<section>
+  <div class="sec-label">Nos Succursales</div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:.9rem">Cliquez sur une succursale pour voir sa localisation.</div>
+  <div class="branches-grid">
+    <div class="branch-card" id="branch-card-1" onclick="selectBranch(1)">
+      <div class="b-tag">Succursale 1</div>
+      <div class="b-name">🌿 Médina</div>
+      <div class="b-addr" id="branch1-addr">12 Rue des Épices, Médina<br>Ville, Maroc</div>
+      <div class="b-cta">📍 Voir sur la carte →</div>
+    </div>
+    <div class="branch-card" id="branch-card-2" onclick="selectBranch(2)">
+      <div class="b-tag">Succursale 2</div>
+      <div class="b-name">🌿 Nouvelle Ville</div>
+      <div class="b-addr" id="branch2-addr">45 Boulevard Hassan II<br>Ville, Maroc</div>
+      <div class="b-cta">📍 Voir sur la carte →</div>
+    </div>
+  </div>
+  <div id="loc-map-container" style="display:none;">
+    <div class="loc-card">
+      <div class="loc-map-wrap"><div id="fr-static-map" style="width:100%;height:100%;"></div></div>
+      <div class="loc-footer">
+        <div><div class="loc-main" id="loc-main-txt">—</div><div class="loc-sub" id="loc-sub-txt">—</div></div>
+        <a class="gmaps-btn" id="loc-gmaps-link" href="#" target="_blank">📍 Google Maps →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ RÉSERVATION ═══ -->
+<section>
+  <div class="sec-label">Réserver une Table</div>
+  <div class="booking-grid">
+    <div class="bf"><label>Votre nom</label><input type="text" id="book-name" placeholder="Prénom Nom"></div>
+    <div class="bf"><label>Téléphone</label><input type="tel" id="book-phone" placeholder="06 xx xx xx xx"></div>
+    <div class="bf"><label>Date</label><input type="date" id="book-date"></div>
+    <div class="bf"><label>Heure</label><input type="time" id="book-time"></div>
+    <div class="bf"><label>Personnes</label><select id="book-guests"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6+</option></select></div>
+    <div class="bf"><label>Succursale</label><select id="book-branch"><option>Médina</option><option>Nouvelle Ville</option></select></div>
+  </div>
+  <button class="book-btn" onclick="submitBooking()">Confirmer →</button>
+</section>
+
+<!-- ═══ MENU ═══ -->
+<section>
+  <div class="sec-label">Menu</div>
+  <div class="menu-cats" id="menu-cats"></div>
+  <div class="menu-grid" id="menu-grid"></div>
+</section>
+
+<!-- ═══ AVIS ═══ -->
+<section>
+  <div class="sec-label">Avis Clients</div>
+  <div class="rating-summary">
+    <div class="r-big">
+      <div class="r-num">4,8</div>
+      <div class="r-stars">⭐⭐⭐⭐⭐</div>
+      <div class="r-count">312 AVIS</div>
+    </div>
+    <div class="r-bars">
+      <div class="r-bar-row"><span class="r-bar-lbl">5</span><div class="r-bar-track"><div class="r-bar-fill" style="width:78%"></div></div><span class="r-bar-n">244</span></div>
+      <div class="r-bar-row"><span class="r-bar-lbl">4</span><div class="r-bar-track"><div class="r-bar-fill" style="width:14%"></div></div><span class="r-bar-n">44</span></div>
+      <div class="r-bar-row"><span class="r-bar-lbl">3</span><div class="r-bar-track"><div class="r-bar-fill" style="width:5%"></div></div><span class="r-bar-n">15</span></div>
+      <div class="r-bar-row"><span class="r-bar-lbl">2</span><div class="r-bar-track"><div class="r-bar-fill" style="width:2%"></div></div><span class="r-bar-n">6</span></div>
+      <div class="r-bar-row"><span class="r-bar-lbl">1</span><div class="r-bar-track"><div class="r-bar-fill" style="width:1%"></div></div><span class="r-bar-n">3</span></div>
+    </div>
+    <div style="flex-shrink:0;"><a href="#" class="write-review-btn">✏️ Laisser un avis</a></div>
+  </div>
+  <div class="reviews-grid">
+    <div class="rv-card"><div class="rv-hdr"><div class="rv-av">K</div><div class="rv-meta"><div class="rv-nm">Khalid B.</div><div class="rv-guide">Local Guide · 45 avis</div><div class="rv-stars">⭐⭐⭐⭐⭐</div><div class="rv-date">il y a 2 semaines</div></div></div><div class="rv-txt">Une adresse incontournable ! Le tajine d'agneau aux pruneaux est simplement divin, la présentation soignée et le service impeccable. On y retourne avec plaisir chaque fois.</div><div class="rv-tags"><span class="rv-tag">🍽️ Dîner</span><span class="rv-tag">80–120 MAD</span><span class="rv-tag">Cuisine ⭐5</span><span class="rv-tag">Service ⭐5</span></div></div>
+    <div class="rv-card"><div class="rv-hdr"><div class="rv-av">S</div><div class="rv-meta"><div class="rv-nm">Sofia M.</div><div class="rv-guide">Local Guide · 23 avis</div><div class="rv-stars">⭐⭐⭐⭐⭐</div><div class="rv-date">il y a 1 mois</div></div></div><div class="rv-txt">Ambiance magique, décoration authentique et nourriture délicieuse. Les pastillas au poulet et amandes sont à tomber. Personnel accueillant et souriant. Je recommande vivement !</div><div class="rv-tags"><span class="rv-tag">☕ Brunch</span><span class="rv-tag">50–80 MAD</span><span class="rv-tag">Cuisine ⭐5</span><span class="rv-tag">Ambiance ⭐5</span></div></div>
+    <div class="rv-card"><div class="rv-hdr"><div class="rv-av">Y</div><div class="rv-meta"><div class="rv-nm">Youssef A.</div><div class="rv-guide">48 avis · 120 photos</div><div class="rv-stars">⭐⭐⭐⭐☆</div><div class="rv-date">il y a 3 semaines</div></div></div><div class="rv-txt">Très bon restaurant, la cuisine est savoureuse et les portions généreuses. Petit bémol sur le temps d'attente un vendredi soir, mais ça vaut largement la peine d'y revenir.</div><div class="rv-tags"><span class="rv-tag">🍽️ Dîner</span><span class="rv-tag">Cuisine ⭐4</span><span class="rv-tag">Service ⭐4</span></div></div>
+    <div class="rv-card"><div class="rv-hdr"><div class="rv-av">L</div><div class="rv-meta"><div class="rv-nm">Leila H.</div><div class="rv-guide">Local Guide · 67 avis</div><div class="rv-stars">⭐⭐⭐⭐⭐</div><div class="rv-date">il y a 2 mois</div></div></div><div class="rv-txt">Best couscous I've ever had in Morocco! The atmosphere is warm, staff extremely friendly. The mint tea ritual at the end was a wonderful touch. Will definitely come back.</div><div class="rv-tags"><span class="rv-tag">🫕 Déjeuner</span><span class="rv-tag">60–100 MAD</span><span class="rv-tag">Cuisine ⭐5</span><span class="rv-tag">Ambiance ⭐5</span></div></div>
+    <div class="rv-card"><div class="rv-hdr"><div class="rv-av">M</div><div class="rv-meta"><div class="rv-nm">Mohammed R.</div><div class="rv-guide">19 avis · 34 photos</div><div class="rv-stars">⭐⭐⭐⭐⭐</div><div class="rv-date">il y a 5 semaines</div></div></div><div class="rv-txt">جربت هذا المطعم للمرة الأولى مع العائلة وكانت التجربة رائعة. الأطباق لذيذة، الخدمة ممتازة والأجواء هادئة وجميلة. سنعود بالتأكيد.</div><div class="rv-tags"><span class="rv-tag">👨‍👩‍👧 Famille</span><span class="rv-tag">Cuisine ⭐5</span><span class="rv-tag">Service ⭐5</span></div></div>
+    <div class="rv-card"><div class="rv-hdr"><div class="rv-av">A</div><div class="rv-meta"><div class="rv-nm">Amina C.</div><div class="rv-guide">Local Guide · 31 avis</div><div class="rv-stars">⭐⭐⭐⭐⭐</div><div class="rv-date">il y a 6 semaines</div></div></div><div class="rv-txt">Les jus frais sont incroyables, surtout le cocktail maison aux fruits rouges. Parfait pour un petit déjeuner ou un brunch en famille. Prix très raisonnables pour la qualité proposée.</div><div class="rv-tags"><span class="rv-tag">☕ Petit-déj</span><span class="rv-tag">30–50 MAD</span><span class="rv-tag">Cuisine ⭐5</span><span class="rv-tag">Service ⭐5</span></div></div>
+  </div>
+</section>
+
+<footer>
+  © 2025 <b id="footer-name">Le Jardin d'Épices</b> — Tous droits réservés<br>
+  <div class="powered-by">Powered by <span>MenuPro</span> · Solution digitale pour restaurants</div>
+</footer>
+
+<!-- CART BAR -->
+<div class="cart-bar" id="cart-bar" onclick="openCart()">
+  <div style="display:flex;align-items:center;gap:9px"><span class="cart-badge" id="cart-count">0</span><span class="cart-bar-lbl">Ma commande</span></div>
+  <span class="cart-bar-tot" id="cart-bar-tot">0 MAD</span>
+</div>
+
+<!-- CART MODAL -->
+<div class="cart-overlay" id="cart-overlay" onclick="if(event.target===this)closeCart()">
+  <div class="cart-modal">
+    <div class="cart-hdr"><div class="cart-title">🛒 Ma Commande</div><button class="close-btn" onclick="closeCart()">×</button></div>
+    <div id="cart-items"></div>
+    <div class="cart-sum" id="cart-sum" style="display:none">
+      <div class="cs-row"><span>Sous-total</span><span id="cs-sub">0 MAD</span></div>
+      <div class="cs-row"><span>Livraison</span><span id="cs-del">Gratuite</span></div>
+      <div class="cs-final"><span>Total</span><span id="cs-tot">0 MAD</span></div>
+      <button class="checkout-btn" onclick="placeOrder()">Commander →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="prod-overlay" id="prod-overlay" onclick="if(event.target===this)closeProd()">
+  <div class="prod-modal">
+    <div class="pm-img"><div class="pm-emoji" id="pm-emoji">🍽️</div></div>
+    <div class="pm-body">
+      <div class="pm-hdr"><div class="pm-name" id="pm-name">—</div><div class="pm-price-badge" id="pm-price">—</div></div>
+      <div class="pm-cat" id="pm-cat">—</div>
+      <div class="pm-desc" id="pm-desc">—</div>
+      <div class="pm-ing-lbl">Ingrédients</div>
+      <div class="pm-ings" id="pm-ings"></div>
+      <div class="pm-footer">
+        <button class="pm-close" onclick="closeProd()">Fermer</button>
+        <button class="pm-add" id="pm-add-btn" onclick="addFromModal()">🛒 Ajouter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="pay-overlay" id="pay-overlay" onclick="if(event.target===this)closePay()">
+  <div class="pay-modal">
+    <div class="pay-steps">
+      <div class="pay-step active" id="sd-0"><span>1</span><div class="step-lbl">Succursale</div></div>
+      <div class="step-line" id="sl-0"></div>
+      <div class="pay-step" id="sd-1"><span>2</span><div class="step-lbl">Type</div></div>
+      <div class="step-line" id="sl-1"></div>
+      <div class="pay-step" id="sd-2"><span>3</span><div class="step-lbl">Paiement</div></div>
+      <div class="step-line" id="sl-2"></div>
+      <div class="pay-step" id="sd-3"><span>4</span><div class="step-lbl">Confirmation</div></div>
+    </div>
+    <div class="pay-hdr"><div class="pay-hdr-title" id="pay-title">Choisir une succursale</div><button class="close-btn" onclick="closePay()">×</button></div>
+
+    <!-- STEP 0: Branch -->
+    <div class="pay-body" id="ps-0">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:1rem">Choisissez la succursale pour votre commande :</div>
+      <div class="ck-type-grid">
+        <div class="ck-card" id="ck-br-1" onclick="selBranch(1)"><div class="ck-ico">🌿</div><div class="ck-title">Médina</div><div class="ck-desc" id="ck-br1-desc">12 Rue des Épices</div></div>
+        <div class="ck-card" id="ck-br-2" onclick="selBranch(2)"><div class="ck-ico">🌿</div><div class="ck-title">Nouvelle Ville</div><div class="ck-desc" id="ck-br2-desc">45 Bd Hassan II</div></div>
+      </div>
+      <div class="pay-error" id="err-0"></div>
+      <button class="pay-confirm-btn" onclick="step0Next()" style="margin-top:1.1rem">Continuer →</button>
+    </div>
+
+    <!-- STEP 1: Type -->
+    <div class="pay-body" id="ps-1" style="display:none">
+      <div class="ck-type-grid">
+        <div class="ck-card" id="ck-surplace" onclick="selType('surplace')"><div class="ck-ico">🍽️</div><div class="ck-title">Sur place</div><div class="ck-desc">À votre table</div></div>
+        <div class="ck-card" id="ck-ailleurs" onclick="selType('ailleurs')"><div class="ck-ico">📱</div><div class="ck-title">À distance</div><div class="ck-desc">Récupérer ou livraison</div></div>
+      </div>
+      <div id="tbl-wrap" style="display:none;margin-top:1rem">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:7px">Sélectionnez votre table :</div>
+        <div class="tbl-row" id="tbl-row"></div>
+      </div>
+      <div id="dist-wrap" style="display:none;margin-top:1rem">
+        <div style="display:flex;gap:9px">
+          <div class="ck-sub-opt" id="ck-pickup" onclick="selDist('pickup')"><span style="font-size:1.2rem;display:block;margin-bottom:3px">🏃</span><div style="font-size:10px;font-weight:700">Je récupère</div></div>
+          <div class="ck-sub-opt" id="ck-delivery" onclick="selDist('delivery')"><span style="font-size:1.2rem;display:block;margin-bottom:3px">🛵</span><div style="font-size:10px;font-weight:700">Livraison</div></div>
+        </div>
+      </div>
+      <div id="pickup-phone-wrap" style="display:none;margin-top:1rem">
+        <div style="font-size:9px;color:var(--text3);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">Votre numéro *</div>
+        <input class="pay-input" id="pickup-phone" type="tel" placeholder="06 xx xx xx xx">
+      </div>
+      <div id="delivery-wrap" style="display:none;margin-top:1rem">
+        <div style="display:flex;gap:7px;margin-bottom:9px;align-items:center">
+          <button class="locate-btn" id="locate-btn" onclick="useMyLocation()"><span id="loc-ico">📍</span><span id="loc-lbl">Ma position</span></button>
+          <div style="flex:1;text-align:center;font-size:9px;color:var(--text3)">— déplacez l'épingle —</div>
+        </div>
+        <div id="delivery-map" style="height:200px;border-radius:11px;overflow:hidden;border:1px solid var(--border);margin-bottom:9px;background:var(--bg2);"></div>
+        <div style="background:var(--accent-dim);border:1px solid rgba(212,175,55,.2);border-radius:9px;padding:.65rem;font-size:10px;color:var(--text);margin-bottom:7px;display:flex;gap:7px;align-items:flex-start;">
+          <span>📍</span><div><div id="addr-txt" style="font-weight:600">Déplacez l'épingle pour choisir votre adresse</div><div id="addr-coords" style="font-size:9px;color:var(--text3);margin-top:1px"></div></div>
+        </div>
+        <button class="loc-save-btn" id="loc-save-btn" onclick="saveLocation()" disabled>💾 Sauvegarder</button>
+        <div style="font-size:9px;color:var(--text3);margin-top:7px;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.8px">Téléphone *</div>
+        <input class="pay-input" id="del-phone" type="tel" placeholder="06 xx xx xx xx">
+      </div>
+      <div class="pay-error" id="err-1"></div>
+      <div style="display:flex;gap:9px;margin-top:1.1rem">
+        <button class="pay-back-btn" onclick="goStep(0)">← Retour</button>
+        <button class="pay-confirm-btn" onclick="step1Next()" style="flex:1;margin-top:0">Continuer →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Payment -->
+    <div class="pay-body" id="ps-2" style="display:none">
+      <div class="pay-sum">
+        <div class="ps-row"><span>Succursale</span><span id="p-branch">—</span></div>
+        <div class="ps-row"><span>Type</span><span id="p-ctx">—</span></div>
+        <hr class="pay-hr"><div id="p-items"></div><hr class="pay-hr">
+        <div class="pay-tot-row"><span>Total</span><span id="p-total">0 MAD</span></div>
+      </div>
+      <div class="pay-method-lbl">Mode de paiement</div>
+      <div class="pay-methods-grid">
+        <div class="pay-method-btn" data-m="cash" onclick="selPay('cash')"><span class="pay-mico">💵</span><div class="pay-mnm">Espèces</div></div>
+        <div class="pay-method-btn" data-m="card" onclick="selPay('card')"><span class="pay-mico">💳</span><div class="pay-mnm">Carte bancaire</div></div>
+      </div>
+      <div class="pay-error" id="pay-err"></div>
+      <div id="pay-cash-sec" style="display:none">
+        <div class="pay-cash-info"><strong>💵 Paiement en espèces</strong><br>Règlement à la livraison ou au comptoir.</div>
+      </div>
+      <div id="pay-card-sec" style="display:none">
+        <div class="pay-secure">🔒 Transactions sécurisées SSL/TLS</div>
+        <div class="card-logos">
+          <div class="c-logo" style="color:#1a1a8c;font-weight:900">VISA</div>
+          <div class="c-logo" style="background:#eb001b;color:#fff;border-color:#eb001b">MC</div>
+          <div class="c-logo" style="color:#006fcf">AMEX</div>
+          <div class="c-logo">CMI</div>
+        </div>
+        <div class="pay-field"><label>* Numéro de carte</label>
+          <div class="pay-iw"><input class="pay-input" id="card-num" type="text" inputmode="numeric" placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(event)"><span class="pay-iico">💳</span></div></div>
+        <div class="pay-field"><label>* Nom du titulaire</label><input class="pay-input" id="card-nm" type="text" placeholder="PRÉNOM NOM" style="text-transform:uppercase"></div>
+        <div class="pay-field pay-field-row">
+          <div><label>* Expiration</label><input class="pay-input" id="card-exp" type="text" inputmode="numeric" placeholder="MM/AA" maxlength="5" oninput="fmtExp(event)"></div>
+          <div><label>* CVV</label><div class="pay-iw"><input class="pay-input" id="card-cvv" type="password" inputmode="numeric" placeholder="•••" maxlength="4"><span class="pay-iico">🔒</span></div></div>
+        </div>
+        <!-- 🔌 API PAIEMENT ICI -->
+      </div>
+      <div style="display:flex;gap:9px;margin-top:.9rem">
+        <button class="pay-back-btn" onclick="goStep(1)">← Retour</button>
+        <button class="pay-confirm-btn" onclick="confirmPay()" style="flex:1;margin-top:0">Confirmer →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Done -->
+    <div class="pay-body" id="ps-3" style="display:none;text-align:center;padding:2rem 1.3rem">
+      <div style="font-size:3.5rem;margin-bottom:.8rem">✅</div>
+      <div style="font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--accent);margin-bottom:.4rem">Commande confirmée !</div>
+      <div id="p-confirm-msg" style="font-size:11px;color:var(--text2);line-height:1.7;white-space:pre-line;margin-bottom:1.3rem"></div>
+      <button class="pay-confirm-btn" onclick="closePay()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- WiFi Block -->
+<div class="wifi-block" id="wifi-block">
+  <div class="wifi-block-box">
+    <div class="wbb-ico">📶</div>
+    <div class="wbb-title">WiFi requis</div>
+    <div class="wbb-txt">Pour commander sur place, connectez-vous au WiFi du restaurant :<br><strong style="color:var(--accent);font-size:14px" id="wbb-ssid">JardinEpices_WiFi</strong><br><br>Connectez-vous puis réessayez.</div>
+    <button class="wbb-btn" onclick="document.getElementById('wifi-block').style.display='none'">Compris</button>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-modal">
+    <div class="s-ico">✅</div>
+    <div class="s-title">Réservation confirmée !</div>
+    <div class="s-msg" id="s-msg"></div>
+    <button class="s-close" onclick="document.getElementById('success-overlay').classList.remove('open')">Fermer</button>
+  </div>
+</div>
+
+<!-- ADMIN MODAL (#/admin) -->
+<div class="admin-overlay" id="admin-overlay">
+  <div class="admin-modal">
+    <!-- Login -->
+    <div class="adm-login" id="adm-login">
+      <div style="font-size:3rem;margin-bottom:.8rem">🔐</div>
+      <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--accent);margin-bottom:.2rem">Panneau Commandes</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:2rem;letter-spacing:1px;text-transform:uppercase">Accès réservé au personnel</div>
+      <input id="adm-pass" type="password" placeholder="Mot de passe" style="width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;outline:none;margin-bottom:.8rem;font-family:var(--font-body);text-align:center;letter-spacing:3px;">
+      <div id="adm-err" style="font-size:11px;color:#e74c3c;margin-bottom:.7rem;display:none">❌ Mot de passe incorrect</div>
+      <button onclick="checkPass()" style="width:100%;padding:.9rem;border-radius:12px;border:none;background:var(--accent);color:#0f0d0a;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font-body);letter-spacing:.5px;">Accéder →</button>
+      <button onclick="closeAdmin()" style="width:100%;margin-top:.6rem;padding:.7rem;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:12px;cursor:pointer;font-family:var(--font-body);">Annuler</button>
+    </div>
+    <!-- Dashboard -->
+    <div class="adm-dashboard" id="adm-dashboard">
+      <div class="adm-header">
+        <div>
+          <div style="font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--accent);">🍽️ Panneau Commandes</div>
+          <div style="font-size:10px;color:var(--text3);" id="adm-order-count">—</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="refreshAdmin()" style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:10px;cursor:pointer;font-family:var(--font-body);">🔄</button>
+          <button onclick="closeAdmin()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+        </div>
+      </div>
+      <div class="adm-tabs">
+        <button class="adm-tab active" id="adm-tab-orders" onclick="admTab('orders')">📋 Commandes</button>
+        <button class="adm-tab" id="adm-tab-security" onclick="admTab('security')">🔒 Sécurité</button>
+        <button class="adm-tab" id="adm-tab-look" onclick="admTab('look')">🎨 Apparence</button>
+      </div>
+      <!-- Orders Tab -->
+      <div class="adm-tab-content active" id="adm-content-orders">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1rem;">
+          <button onclick="admFilter('all')" id="af-all" style="padding:4px 11px;border-radius:20px;border:none;background:var(--accent);color:#0f0d0a;font-size:9px;font-weight:700;cursor:pointer;font-family:var(--font-body);letter-spacing:.5px;">TOUTES</button>
+          <button onclick="admFilter('surplace')" id="af-sp" style="padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:9px;font-weight:700;cursor:pointer;font-family:var(--font-body);">SUR PLACE</button>
+          <button onclick="admFilter('delivery')" id="af-del" style="padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:9px;font-weight:700;cursor:pointer;font-family:var(--font-body);">LIVRAISON</button>
+          <button onclick="admFilter('pickup')" id="af-pu" style="padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:9px;font-weight:700;cursor:pointer;font-family:var(--font-body);">À EMPORTER</button>
+          <button onclick="clearOrders()" style="padding:4px 11px;border-radius:20px;border:1px solid rgba(192,57,43,.3);background:rgba(192,57,43,.08);color:#e74c3c;font-size:9px;font-weight:700;cursor:pointer;font-family:var(--font-body);margin-left:auto;">🗑 VIDER</button>
+        </div>
+        <div id="adm-orders-list"></div>
+      </div>
+      <!-- Security Tab -->
+      <div class="adm-tab-content" id="adm-content-security">
+        <div style="background:var(--bg2);border-radius:12px;padding:1rem;border:1px solid var(--border);">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:.8rem;">🔒 WiFi Anti-Fraude</div>
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:.6rem;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#27ae60;animation:pulse 2s infinite;flex-shrink:0;"></div>
+            <span style="font-size:11px;color:var(--text2)">Vérification WiFi <strong style="color:#27ae60">ACTIVÉE</strong></span>
+          </div>
+          <div style="font-size:10px;color:var(--text3);line-height:1.6;background:var(--accent-dim);border-radius:8px;padding:.7rem;border:1px solid rgba(212,175,55,.15);">
+            📶 Réseau : <strong style="color:var(--accent)" id="sec-ssid">JardinEpices_WiFi</strong><br><br>
+            Les commandes sur place nécessitent que le client soit connecté à ce réseau WiFi.
+          </div>
+        </div>
+      </div>
+      <!-- Appearance Tab -->
+      <div class="adm-tab-content" id="adm-content-look">
+        <div style="font-size:9px;color:var(--text3);margin-bottom:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Thèmes</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;">
+          <button onclick="setTheme('#d4af37','#c0392b')" style="padding:.75rem;border-radius:10px;border:none;background:linear-gradient(135deg,#c0392b,#d4af37);color:#fff;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🌿 Épices Or</button>
+          <button onclick="setTheme('#2ecc71','#27ae60')" style="padding:.75rem;border-radius:10px;border:none;background:linear-gradient(135deg,#1a3a2a,#2ecc71);color:#fff;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🌱 Vert Nature</button>
+          <button onclick="setTheme('#3498db','#2980b9')" style="padding:.75rem;border-radius:10px;border:none;background:linear-gradient(135deg,#1a2a4a,#3498db);color:#fff;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🌊 Bleu Méditerranée</button>
+          <button onclick="setTheme('#9b59b6','#8e44ad')" style="padding:.75rem;border-radius:10px;border:none;background:linear-gradient(135deg,#2a1a4a,#9b59b6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">💜 Violet Luxe</button>
+        </div>
+        <div style="font-size:9px;color:var(--text3);margin-bottom:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Couleurs personnalisées</div>
+        <div style="display:flex;gap:10px;">
+          <div style="flex:1;"><div style="font-size:9px;color:var(--text3);margin-bottom:3px;">Accent</div>
+            <input type="color" id="c-accent" value="#d4af37" oninput="setTheme(this.value,document.getElementById('c-accent2').value)" style="width:100%;height:36px;border-radius:8px;border:1px solid var(--border);cursor:pointer;"></div>
+          <div style="flex:1;"><div style="font-size:9px;color:var(--text3);margin-bottom:3px;">Secondaire</div>
+            <input type="color" id="c-accent2" value="#c0392b" oninput="setTheme(document.getElementById('c-accent').value,this.value)" style="width:100%;height:36px;border-radius:8px;border:1px solid var(--border);cursor:pointer;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   CONFIGURATION — easily editable for each client
+═══════════════════════════════════════════════════════ */
+const CONFIG = {
+  name: "Le Jardin d'Épices",
+  tagline: "Restaurant · Café · Bar",
+  cuisine: "Marocaine · Méditerranéenne",
+  phone: "06 00 00 00 00",
+  instagram: "@jardinepices",
+  wifi_ssid: "JardinEpices_WiFi",
+  wifi_pass: "Epices2025!",
+  admin_pass: "admin2025",
+  branch1: { name: "Médina", addr: "12 Rue des Épices, Médina", lat: 33.9716, lng: -6.8498, maps: "https://maps.google.com/?q=33.9716,-6.8498" },
+  branch2: { name: "Nouvelle Ville", addr: "45 Bd Hassan II", lat: 33.9800, lng: -6.8600, maps: "https://maps.google.com/?q=33.9800,-6.8600" },
+  currency: "MAD"
+};
+
+/* ═══════════════════════════════════════════════════════
+   MENU DATA — random/demo menu
+═══════════════════════════════════════════════════════ */
+const MENU = [
+  // Entrées
+  {cat:"Entrées",emoji:"🥗",name:{fr:"Salade Marocaine",ar:"سلطة مغربية",en:"Moroccan Salad"},desc:{fr:"Tomates, concombres, poivrons, persil et huile d'argan.",ar:"طماطم وخيار وفلفل وبقدونس وزيت أرغان.",en:"Tomatoes, cucumbers, peppers, parsley and argan oil."},ing:{fr:["Tomate","Concombre","Poivron","Persil","Huile d'argan","Citron"],en:["Tomato","Cucumber","Pepper","Parsley","Argan oil","Lemon"],ar:["طماطم","خيار","فلفل","بقدونس","زيت أرغان","ليمون"]},price:30},
+  {cat:"Entrées",emoji:"🫘",name:{fr:"Bissara",ar:"بيسارة",en:"Bissara"},desc:{fr:"Soupe de fèves maison, ail, cumin, huile d'olive.",ar:"شوربة الفول البيتية بالثوم والكمون وزيت الزيتون.",en:"House fava bean soup, garlic, cumin, olive oil."},ing:{fr:["Fèves","Ail","Cumin","Huile d'olive","Piment"],en:["Fava beans","Garlic","Cumin","Olive oil","Chili"],ar:["فول","ثوم","كمون","زيت زيتون","فلفل حار"]},price:25},
+  {cat:"Entrées",emoji:"🥟",name:{fr:"Briouats au Poulet",ar:"بريوات بالدجاج",en:"Chicken Briouats"},desc:{fr:"Feuilletés croustillants farcis de poulet et amandes aux épices.",ar:"مثلثات هشة محشوة بالدجاج واللوز بالتوابل.",en:"Crispy pastries filled with spiced chicken and almonds."},ing:{fr:["Brick","Poulet","Amandes","Cannelle","Persil","Œuf"],en:["Pastry","Chicken","Almonds","Cinnamon","Parsley","Egg"],ar:["عجينة","دجاج","لوز","قرفة","بقدونس","بيض"]},price:45},
+  // Plats
+  {cat:"Plats",emoji:"🫕",name:{fr:"Tajine Agneau Pruneaux",ar:"طاجين لحم البقر بالبرقوق",en:"Lamb Prune Tajine"},desc:{fr:"Épaule d'agneau confite aux pruneaux, sésame et amandes grillées.",ar:"كتف الضأن المطهو ببطء مع البرقوق والسمسم واللوز المحمص.",en:"Slow-braised lamb shoulder with prunes, sesame and toasted almonds."},ing:{fr:["Agneau","Pruneaux","Amandes","Sésame","Cannelle","Gingembre","Safran"],en:["Lamb","Prunes","Almonds","Sesame","Cinnamon","Ginger","Saffron"],ar:["ضأن","برقوق","لوز","سمسم","قرفة","زنجبيل","زعفران"]},price:95},
+  {cat:"Plats",emoji:"🍗",name:{fr:"Poulet Citron Confit",ar:"دجاج بالليمون المعصور",en:"Preserved Lemon Chicken"},desc:{fr:"Poulet fermier au citron confit et olives, servi avec pain maison.",ar:"دجاج فلاحي بالليمون المعصور والزيتون مع الخبز البيتي.",en:"Free-range chicken with preserved lemon and olives, served with house bread."},ing:{fr:["Poulet","Citron confit","Olives","Ail","Coriandre","Curcuma"],en:["Chicken","Preserved lemon","Olives","Garlic","Coriander","Turmeric"],ar:["دجاج","ليمون معصور","زيتون","ثوم","كزبرة","كركم"]},price:80},
+  {cat:"Plats",emoji:"🍚",name:{fr:"Couscous Royal",ar:"كسكس ملكي",en:"Royal Couscous"},desc:{fr:"Couscous traditionnel aux 7 légumes, merguez, poulet et viande.",ar:"كسكس تقليدي بـ7 خضروات ومرقاز ودجاج ولحم.",en:"Traditional couscous with 7 vegetables, merguez, chicken and meat."},ing:{fr:["Semoule","Légumes","Merguez","Poulet","Viande","Bouillon"],en:["Semolina","Vegetables","Merguez","Chicken","Meat","Broth"],ar:["سميد","خضروات","مرقاز","دجاج","لحم","مرق"]},price:85},
+  {cat:"Plats",emoji:"🐟",name:{fr:"Chermoula de Mer",ar:"سمك بالشرمولة",en:"Sea Chermoula"},desc:{fr:"Filet de poisson du jour mariné à la chermoula, grillé au charbon.",ar:"فيلية سمك اليوم متبلة بالشرمولة مشوية على الفحم.",en:"Daily fish fillet marinated in chermoula, charcoal grilled."},ing:{fr:["Poisson du jour","Chermoula","Citron","Herbes","Ail"],en:["Daily fish","Chermoula","Lemon","Herbs","Garlic"],ar:["سمك اليوم","شرمولة","ليمون","أعشاب","ثوم"]},price:90},
+  {cat:"Plats",emoji:"🥩",name:{fr:"Pastilla au Pigeon",ar:"بسطيلة بالحمام",en:"Pigeon Pastilla"},desc:{fr:"L'emblématique pastilla marocaine, feuilleté sucré-salé au pigeon et amandes.",ar:"البسطيلة المغربية الشهيرة، عجينة مورقة حلوة مالحة بالحمام واللوز.",en:"The iconic Moroccan pastilla, sweet-savoury pastry with pigeon and almonds."},ing:{fr:["Brick","Pigeon","Amandes","Cannelle","Sucre glace","Safran"],en:["Pastry","Pigeon","Almonds","Cinnamon","Icing sugar","Saffron"],ar:["عجينة","حمام","لوز","قرفة","سكر","زعفران"]},price:75},
+  // Sandwichs & Snacks
+  {cat:"Snacks",emoji:"🥙",name:{fr:"Kefta Maison",ar:"كفتة بيتية",en:"House Kefta"},desc:{fr:"Galette farcie de kefta grillée, tomate, persil et harissa.",ar:"خبزة محشوة بالكفتة المشوية والطماطم والبقدونس والهريسة.",en:"Flatbread filled with grilled kefta, tomato, parsley and harissa."},ing:{fr:["Galette","Kefta","Tomate","Persil","Harissa","Cumin"],en:["Flatbread","Kefta","Tomato","Parsley","Harissa","Cumin"],ar:["خبزة","كفتة","طماطم","بقدونس","هريسة","كمون"]},price:35},
+  {cat:"Snacks",emoji:"🥪",name:{fr:"Msemmen Farci",ar:"مسمن محشي",en:"Stuffed Msemmen"},desc:{fr:"Crêpe feuilletée marocaine farcie fromage et thon.",ar:"مسمن مغربي محشو بالجبن والتون.",en:"Moroccan layered crepe stuffed with cheese and tuna."},ing:{fr:["Msemmen","Fromage","Thon","Herbes"],en:["Msemmen","Cheese","Tuna","Herbs"],ar:["مسمن","جبن","تون","أعشاب"]},price:30},
+  // Desserts
+  {cat:"Desserts",emoji:"🍮",name:{fr:"Seffa Maison",ar:"سفة بيتية",en:"House Seffa"},desc:{fr:"Semoule sucrée au beurre et cannelle, raisins secs et amandes.",ar:"سميد حلو بالزبدة والقرفة والزبيب واللوز.",en:"Sweet semolina with butter, cinnamon, raisins and almonds."},ing:{fr:["Semoule","Beurre","Cannelle","Raisins secs","Amandes","Sucre"],en:["Semolina","Butter","Cinnamon","Raisins","Almonds","Sugar"],ar:["سميد","زبدة","قرفة","زبيب","لوز","سكر"]},price:35},
+  {cat:"Desserts",emoji:"🍰",name:{fr:"Chebakia",ar:"شبكية",en:"Chebakia"},desc:{fr:"Pâtisserie marocaine traditionnelle au miel et graines de sésame.",ar:"حلوى مغربية تقليدية بالعسل وبذور السمسم.",en:"Traditional Moroccan pastry with honey and sesame seeds."},ing:{fr:["Farine","Miel","Sésame","Eau de fleur d'oranger","Cannelle"],en:["Flour","Honey","Sesame","Orange blossom water","Cinnamon"],ar:["دقيق","عسل","سمسم","ماء زهر البرتقال","قرفة"]},price:20},
+  {cat:"Desserts",emoji:"🍨",name:{fr:"Glace Argan & Miel",ar:"آيس كريم أرغان وعسل",en:"Argan & Honey Ice Cream"},desc:{fr:"Glace artisanale à l'huile d'argan et miel de montagne.",ar:"آيس كريم صناعي بزيت الأرغان وعسل الجبال.",en:"Artisan ice cream with argan oil and mountain honey."},ing:{fr:["Crème","Argan","Miel","Amandes"],en:["Cream","Argan","Honey","Almonds"],ar:["كريمة","أرغان","عسل","لوز"]},price:40},
+  // Boissons
+  {cat:"Boissons",emoji:"🍵",name:{fr:"Atay — Thé à la Menthe",ar:"أتاي بالنعناع",en:"Atay — Mint Tea"},desc:{fr:"Le thé à la menthe fraîche comme au Maroc, versé en hauteur.",ar:"أتاي بالنعناع الطازج مثل المغرب، يُسكب من الأعلى.",en:"Fresh mint tea as in Morocco, poured from height."},ing:{fr:["Thé vert","Menthe fraîche","Sucre","Eau de source"],en:["Green tea","Fresh mint","Sugar","Spring water"],ar:["شاي أخضر","نعناع طازج","سكر","ماء معدني"]},price:15},
+  {cat:"Boissons",emoji:"🥤",name:{fr:"Jus d'Orange Frais",ar:"عصير برتقال طازج",en:"Fresh Orange Juice"},desc:{fr:"Oranges pressées à la minute, 100% naturel sans sucre ajouté.",ar:"برتقال معصور لحظياً، 100% طبيعي بدون سكر مضاف.",en:"Freshly squeezed oranges, 100% natural no added sugar."},ing:{fr:["Oranges fraîches"],en:["Fresh oranges"],ar:["برتقال طازج"]},price:18},
+  {cat:"Boissons",emoji:"🧋",name:{fr:"Smoothie Fruits Rouges",ar:"سموثي فواكه حمراء",en:"Red Fruits Smoothie"},desc:{fr:"Fraises, framboises, myrtilles, lait d'amande et miel.",ar:"فراولة وتوت عليق وتوت أزرق وحليب لوز وعسل.",en:"Strawberries, raspberries, blueberries, almond milk and honey."},ing:{fr:["Fraises","Framboises","Myrtilles","Lait d'amande","Miel"],en:["Strawberries","Raspberries","Blueberries","Almond milk","Honey"],ar:["فراولة","توت عليق","توت أزرق","حليب لوز","عسل"]},price:28},
+  {cat:"Boissons",emoji:"☕",name:{fr:"Café Noisette",ar:"قهوة بالحليب",en:"Noisette Coffee"},desc:{fr:"Espresso serré additionné d'un nuage de lait chaud.",ar:"إسبريسو مركز مع قليل من الحليب الساخن.",en:"Strong espresso with a dash of hot milk."},ing:{fr:["Café arabica","Lait entier"],en:["Arabica coffee","Whole milk"],ar:["قهوة عربية","حليب كامل"]},price:15},
+  {cat:"Boissons",emoji:"🥛",name:{fr:"Lben — Lait Fermenté",ar:"لبن",en:"Lben — Fermented Milk"},desc:{fr:"Lait fermenté marocain traditionnel, frais et légèrement acidulé.",ar:"لبن مغربي تقليدي، منعش وحامض قليلاً.",en:"Traditional Moroccan fermented milk, fresh and slightly tangy."},ing:{fr:["Lait","Ferment naturel"],en:["Milk","Natural ferment"],ar:["حليب","خميرة طبيعية"]},price:12},
+];
+
+const HOURS = [
+  {fr:"Lundi",ar:"الإثنين",en:"Monday",time:"08:00 – 23:00",today:false},
+  {fr:"Mardi",ar:"الثلاثاء",en:"Tuesday",time:"08:00 – 23:00",today:false},
+  {fr:"Mercredi",ar:"الأربعاء",en:"Wednesday",time:"08:00 – 23:00",today:false},
+  {fr:"Jeudi",ar:"الخميس",en:"Thursday",time:"08:00 – 23:00",today:false},
+  {fr:"Vendredi",ar:"الجمعة",en:"Friday",time:"08:00 – 00:00",today:false},
+  {fr:"Samedi",ar:"السبت",en:"Saturday",time:"09:00 – 00:00",today:true},
+  {fr:"Dimanche",ar:"الأحد",en:"Sunday",time:"09:00 – 22:00",today:false},
+];
+
+const CAT_KEYS = ["Tout","Entrées","Plats","Snacks","Desserts","Boissons"];
+const T = {
+  fr:{cats:["Tout","Entrées","Plats","Snacks","Desserts","Boissons"]},
+  en:{cats:["All","Starters","Mains","Snacks","Desserts","Drinks"]},
+  ar:{cats:["الكل","مقبلات","أطباق","سناكس","حلويات","مشروبات"]}
+};
+
+/* ══ STATE ══ */
+let lang='fr', curCat='Tout', cart={}, curProdKey=null;
+let orderType=null, distType=null, tableNum=null, selBranchNum=null;
+let wifiVisible=false, adminLoggedIn=false;
+let staticMapInst=null, staticMapMrk=null, delivMapInst=null, delivMrk=null;
+let currentAdmFilter='all';
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('book-date').min = new Date().toISOString().split('T')[0];
+  applyConfig();
+  setLang('fr');
+  window.addEventListener('hashchange', checkAdminRoute);
+  checkAdminRoute();
+});
+
+function applyConfig() {
+  document.title = CONFIG.name + ' — Menu & Commande';
+  document.getElementById('resto-name').textContent = CONFIG.name;
+  document.getElementById('resto-tagline').textContent = CONFIG.tagline;
+  document.getElementById('hero-h1').innerHTML = CONFIG.name.split(' ').slice(0,2).join(' ')+'<br><em>'+CONFIG.name.split(' ').slice(2).join(' ')+'</em>';
+  document.getElementById('info-phone').textContent = CONFIG.phone;
+  document.getElementById('info-phone').href = 'tel:'+CONFIG.phone.replace(/\s/g,'');
+  document.getElementById('info-addr').textContent = CONFIG.branch1.addr;
+  document.getElementById('info-insta').textContent = CONFIG.instagram;
+  document.getElementById('info-cuisine').textContent = CONFIG.cuisine;
+  document.getElementById('wifi-ssid').textContent = CONFIG.wifi_ssid;
+  document.getElementById('wbb-ssid').textContent = CONFIG.wifi_ssid;
+  document.getElementById('sec-ssid').textContent = CONFIG.wifi_ssid;
+  document.getElementById('branch1-addr').innerHTML = CONFIG.branch1.addr+'<br>Maroc';
+  document.getElementById('branch2-addr').innerHTML = CONFIG.branch2.addr+'<br>Maroc';
+  document.getElementById('ck-br1-desc').textContent = CONFIG.branch1.addr;
+  document.getElementById('ck-br2-desc').textContent = CONFIG.branch2.addr;
+  document.getElementById('footer-name').textContent = CONFIG.name;
+}
+
+/* ══ THEME ══ */
+function toggleTheme(){const f=document.getElementById('theme-fade');f.classList.add('fading');setTimeout(()=>{document.documentElement.classList.toggle('light');setTimeout(()=>f.classList.remove('fading'),60);},200);}
+function setTheme(a,a2){document.documentElement.style.setProperty('--accent',a);document.documentElement.style.setProperty('--accent2',a2);document.documentElement.style.setProperty('--accent-dim','rgba('+hexToRgb(a)+',0.12)');}
+function hexToRgb(h){const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);return r?parseInt(r[1],16)+','+parseInt(r[2],16)+','+parseInt(r[3],16):'212,175,55';}
+
+/* ══ WIFI ══ */
+function toggleWifi(){const p=document.getElementById('wifi-popup');p.classList.toggle('open');if(!p.classList.contains('open')){wifiVisible=false;document.getElementById('wifi-pass-display').textContent='••••••••••••';document.getElementById('eye-ico').textContent='👁';}}
+function toggleWifiPass(e){e.stopPropagation();wifiVisible=!wifiVisible;document.getElementById('wifi-pass-display').textContent=wifiVisible?CONFIG.wifi_pass:'••••••••••••';document.getElementById('eye-ico').textContent=wifiVisible?'🙈':'👁';}
+document.addEventListener('click',e=>{const w=document.getElementById('wifi-widget');if(w&&!w.contains(e.target))document.getElementById('wifi-popup').classList.remove('open');});
+
+/* ══ LANG ══ */
+function setLang(l){lang=l;document.body.dir=l==='ar'?'rtl':'ltr';document.querySelectorAll('.lang-btn').forEach((b,i)=>b.classList.toggle('active',['fr','ar','en'][i]===l));renderHours();renderMenu();}
+function renderHours(){document.getElementById('hours-grid').innerHTML=HOURS.map(h=>`<div class="hr-row${h.today?' today':''}"><span class="hr-day">${h[lang]}</span><span class="hr-time">${h.time}</span></div>`).join('');}
+
+/* ══ BRANCH MAP ══ */
+function selectBranch(n){
+  document.getElementById('branch-card-1').classList.toggle('selected',n===1);
+  document.getElementById('branch-card-2').classList.toggle('selected',n===2);
+  const b = n===1 ? CONFIG.branch1 : CONFIG.branch2;
+  document.getElementById('loc-map-container').style.display='block';
+  document.getElementById('loc-map-container').scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('loc-main-txt').textContent = b.addr;
+  document.getElementById('loc-sub-txt').textContent = 'Maroc';
+  document.getElementById('loc-gmaps-link').href = b.maps;
+  if(!staticMapInst){
+    staticMapInst=L.map('fr-static-map',{zoomControl:true,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false,boxZoom:false,keyboard:false}).setView([b.lat,b.lng],17);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(staticMapInst);
+    const ico=L.divIcon({html:'<div style="font-size:28px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.5))">🌿</div>',iconAnchor:[14,32],className:''});
+    staticMapMrk=L.marker([b.lat,b.lng],{draggable:false,icon:ico}).addTo(staticMapInst);
+    staticMapMrk.bindPopup('<strong>🌿 '+CONFIG.name+'</strong><br>'+b.addr).openPopup();
+  } else {
+    staticMapInst.setView([b.lat,b.lng],17);
+    staticMapMrk.setLatLng([b.lat,b.lng]);
+    staticMapMrk.getPopup().setContent('<strong>🌿 '+CONFIG.name+'</strong><br>'+b.addr).openPopup();
+    setTimeout(()=>staticMapInst.invalidateSize(),200);
+  }
+}
+
+/* ══ BOOKING ══ */
+function submitBooking(){
+  const n=document.getElementById('book-name').value.trim(),p=document.getElementById('book-phone').value.trim(),d=document.getElementById('book-date').value,t=document.getElementById('book-time').value;
+  if(!n||!p||!d||!t){alert('Veuillez remplir tous les champs');return;}
+  document.getElementById('s-msg').textContent=`${n} — ${document.getElementById('book-guests').value} pers.\n${d} à ${t}\n📍 ${document.getElementById('book-branch').value}`;
+  document.getElementById('success-overlay').classList.add('open');
+}
+
+/* ══ MENU ══ */
+function renderMenu(){
+  const t=T[lang];
+  document.getElementById('menu-cats').innerHTML=t.cats.map((c,i)=>`<button class="cat-btn${curCat===CAT_KEYS[i]?' active':''}" onclick="filterCat('${CAT_KEYS[i].replace(/'/g,"\\'")}')">${c}</button>`).join('');
+  const items=curCat==='Tout'?MENU:MENU.filter(m=>m.cat===curCat);
+  document.getElementById('menu-grid').innerHTML=items.map(item=>{
+    const k=item.name.fr,qty=cart[k]?cart[k].qty:0,ek=k.replace(/'/g,"\\'");
+    return `<div class="menu-item${qty>0?' in-cart':''}">
+      <div class="mi-left" onclick="openProd('${ek}')">
+        <div class="mi-name">${item.emoji} ${item.name[lang]}</div>
+        <div class="mi-desc">${item.desc[lang].substring(0,55)}...</div>
+      </div>
+      <div class="mi-right">
+        <div class="mi-price">${item.price} ${CONFIG.currency}</div>
+        ${qty>0?`<div class="qty-ctrl"><button class="qty-btn" onclick="changeQty('${ek}',-1,event)">−</button><span class="qty-num">${qty}</span><button class="qty-btn" onclick="changeQty('${ek}',1,event)">+</button></div>`:`<button class="add-btn" onclick="addToCart('${ek}',${item.price},event)">+</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+function filterCat(c){curCat=c;renderMenu();}
+
+/* ══ PRODUCT MODAL ══ */
+function openProd(k){
+  const item=MENU.find(m=>m.name.fr===k);if(!item)return;
+  curProdKey=k;
+  document.getElementById('pm-emoji').textContent=item.emoji;
+  document.getElementById('pm-name').textContent=item.name[lang];
+  document.getElementById('pm-price').textContent=item.price+' '+CONFIG.currency;
+  document.getElementById('pm-cat').textContent=item.cat;
+  document.getElementById('pm-desc').textContent=item.desc[lang];
+  document.getElementById('pm-ings').innerHTML=(item.ing[lang]||item.ing.fr).map(i=>`<span class="pm-ing">${i}</span>`).join('');
+  const qty=cart[k]?cart[k].qty:0;
+  const btn=document.getElementById('pm-add-btn');
+  btn.textContent=qty>0?`🛒 Ajouter (${qty})`:'🛒 Ajouter';btn.style.background='';
+  document.getElementById('prod-overlay').classList.add('open');
+}
+function closeProd(){document.getElementById('prod-overlay').classList.remove('open');curProdKey=null;}
+function addFromModal(){
+  if(!curProdKey)return;
+  const item=MENU.find(m=>m.name.fr===curProdKey);if(!item)return;
+  if(!cart[curProdKey])cart[curProdKey]={price:item.price,qty:0,names:item.name};
+  cart[curProdKey].qty++;updateCartBar();renderMenu();
+  const btn=document.getElementById('pm-add-btn');
+  btn.textContent=`🛒 Ajouter (${cart[curProdKey].qty})`;btn.style.background='#27ae60';
+  setTimeout(()=>btn.style.background='',700);
+}
+
+/* ══ CART ══ */
+function addToCart(k,price,e){
+  e.stopPropagation();
+  if(!cart[k]){const item=MENU.find(m=>m.name.fr===k);cart[k]={price,qty:0,names:item?item.name:{fr:k,en:k,ar:k}};}
+  cart[k].qty++;updateCartBar();renderMenu();
+}
+function changeQty(k,d,e){
+  e.stopPropagation();if(!cart[k])return;
+  cart[k].qty+=d;if(cart[k].qty<=0)delete cart[k];
+  updateCartBar();renderMenu();
+}
+function totalItems(){return Object.values(cart).reduce((s,v)=>s+v.qty,0);}
+function totalPrice(){return Object.values(cart).reduce((s,v)=>s+v.qty*v.price,0);}
+function updateCartBar(){
+  const n=totalItems();
+  document.getElementById('cart-bar').classList.toggle('visible',n>0);
+  document.getElementById('cart-count').textContent=n;
+  document.getElementById('cart-bar-tot').textContent=totalPrice()+' '+CONFIG.currency;
+}
+function openCart(){renderCartModal();document.getElementById('cart-overlay').classList.add('open');}
+function closeCart(){document.getElementById('cart-overlay').classList.remove('open');}
+function renderCartModal(){
+  const items=Object.entries(cart);const sum=document.getElementById('cart-sum');
+  if(!items.length){document.getElementById('cart-items').innerHTML='<div class="empty-cart">🛒<br>Aucun article</div>';sum.style.display='none';return;}
+  document.getElementById('cart-items').innerHTML=items.map(([k,v])=>{const ek=k.replace(/'/g,"\\'");return`<div class="cart-item"><div><div class="ci-name">${v.names[lang]||k}</div><div class="ci-price">${v.price} ${CONFIG.currency} × ${v.qty}</div></div><div class="ci-right"><div class="qty-ctrl"><button class="qty-btn" onclick="changeQty('${ek}',-1,event);renderCartModal();updateCartBar();">−</button><span class="qty-num">${v.qty}</span><button class="qty-btn" onclick="changeQty('${ek}',1,event);renderCartModal();updateCartBar();">+</button></div><div class="ci-total">${v.qty*v.price} ${CONFIG.currency}</div></div></div>`;}).join('');
+  const s=totalPrice();
+  document.getElementById('cs-sub').textContent=s+' '+CONFIG.currency;
+  document.getElementById('cs-del').textContent='Gratuite';
+  document.getElementById('cs-tot').textContent=s+' '+CONFIG.currency;
+  sum.style.display='block';
+}
+
+/* ══ CHECKOUT ══ */
+function placeOrder(){
+  closeCart();orderType=null;distType=null;tableNum=null;selBranchNum=null;
+  ['ck-surplace','ck-ailleurs','ck-pickup','ck-delivery','ck-br-1','ck-br-2'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('selected');});
+  ['tbl-wrap','dist-wrap','delivery-wrap','pickup-phone-wrap','err-0','err-1','pay-err'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  goStep(0);document.getElementById('pay-overlay').classList.add('open');
+}
+function closePay(){
+  document.getElementById('pay-overlay').classList.remove('open');
+  if(delivMapInst){delivMapInst.remove();delivMapInst=null;delivMrk=null;}
+  window._locAddr='';
+}
+function goStep(n){
+  [0,1,2,3].forEach(i=>{
+    const ps=document.getElementById('ps-'+i);if(ps)ps.style.display=i===n?'block':'none';
+    const dot=document.getElementById('sd-'+i);if(dot){dot.classList.toggle('active',i===n);dot.classList.toggle('done',i<n);}
+    if(i<3){const sl=document.getElementById('sl-'+i);if(sl)sl.classList.toggle('done',i<n);}
+  });
+  document.getElementById('pay-title').textContent={0:'Choisir une succursale',1:'Type de commande',2:'Mode de paiement',3:'Confirmation'}[n];
+}
+function selBranch(n){selBranchNum=n;document.getElementById('ck-br-1').classList.toggle('selected',n===1);document.getElementById('ck-br-2').classList.toggle('selected',n===2);}
+function step0Next(){
+  if(!selBranchNum){showErr('err-0','Veuillez choisir une succursale.');return;}
+  goStep(1);
+}
+function selType(t){
+  orderType=t;
+  document.getElementById('ck-surplace').classList.toggle('selected',t==='surplace');
+  document.getElementById('ck-ailleurs').classList.toggle('selected',t==='ailleurs');
+  document.getElementById('tbl-wrap').style.display=t==='surplace'?'block':'none';
+  document.getElementById('dist-wrap').style.display=t==='ailleurs'?'block':'none';
+  document.getElementById('delivery-wrap').style.display='none';
+  document.getElementById('pickup-phone-wrap').style.display='none';
+  ['ck-pickup','ck-delivery'].forEach(id=>document.getElementById(id).classList.remove('selected'));
+  if(t==='surplace')renderTables();
+}
+function renderTables(){document.getElementById('tbl-row').innerHTML=[1,2,3,4,5,6,7,8,9,10].map(n=>`<button class="tbl-btn${tableNum===n?' selected':''}" onclick="selTable(${n})">${n}</button>`).join('');}
+function selTable(n){tableNum=n;renderTables();}
+function selDist(t){
+  distType=t;
+  document.getElementById('ck-pickup').classList.toggle('selected',t==='pickup');
+  document.getElementById('ck-delivery').classList.toggle('selected',t==='delivery');
+  document.getElementById('delivery-wrap').style.display=t==='delivery'?'block':'none';
+  document.getElementById('pickup-phone-wrap').style.display=t==='pickup'?'block':'none';
+  if(t==='delivery')setTimeout(()=>initDelivMap(CONFIG.branch1.lat,CONFIG.branch1.lng),80);
+}
+function step1Next(){
+  if(!orderType){showErr('err-1','Veuillez choisir le type de commande.');return;}
+  if(orderType==='surplace'&&!tableNum){showErr('err-1','Veuillez sélectionner votre table.');return;}
+  if(orderType==='ailleurs'&&!distType){showErr('err-1','Veuillez choisir : récupérer ou livraison.');return;}
+  if(orderType==='ailleurs'&&distType==='pickup'&&!document.getElementById('pickup-phone').value.trim()){showErr('err-1','Veuillez saisir votre numéro.');return;}
+  if(orderType==='ailleurs'&&distType==='delivery'){
+    if(!window._locAddr||window._locAddr.startsWith('Déplacez')){showErr('err-1','Veuillez sélectionner votre adresse.');return;}
+    if(!document.getElementById('del-phone').value.trim()){showErr('err-1','Veuillez saisir votre téléphone.');return;}
+  }
+  const brLabel=selBranchNum===1?CONFIG.branch1.name:CONFIG.branch2.name;
+  if(orderType==='surplace'){
+    checkWifi(ok=>{
+      if(!ok){document.getElementById('wifi-block').style.display='flex';return;}
+      buildStep2(brLabel,`🍽️ Table N°${tableNum}`);selPay('cash');goStep(2);
+    });
+  } else {
+    const ctx=distType==='pickup'?'🏃 À emporter':'🛵 Livraison';
+    buildStep2(brLabel,ctx);selPay('cash');goStep(2);
+  }
+}
+function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',3000);}
+function buildStep2(branch,ctx){
+  document.getElementById('p-branch').textContent=branch;
+  document.getElementById('p-ctx').textContent=ctx;
+  document.getElementById('p-total').textContent=totalPrice()+' '+CONFIG.currency;
+  document.getElementById('p-items').innerHTML=Object.entries(cart).map(([k,v])=>`<div class="pi-row"><span>${v.names[lang]||k} ×${v.qty}</span><span>${v.qty*v.price} ${CONFIG.currency}</span></div>`).join('');
+}
+function selPay(m){
+  document.querySelectorAll('.pay-method-btn').forEach(b=>b.classList.toggle('active',b.dataset.m===m));
+  ['cash','card'].forEach(s=>{const el=document.getElementById('pay-'+s+'-sec');if(el)el.style.display=s===m?'block':'none';});
+}
+function fmtCard(e){let v=e.target.value.replace(/[^0-9]/g,'').substring(0,16);v=v.replace(/(.{4})/g,'$1 ').trim();e.target.value=v;}
+function fmtExp(e){let v=e.target.value.replace(/[^0-9]/g,'').substring(0,4);if(v.length>=3)v=v.substring(0,2)+'/'+v.substring(2);e.target.value=v;}
+function showPayErr(msg){const el=document.getElementById('pay-err');el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',3500);}
+function confirmPay(){
+  const method=document.querySelector('.pay-method-btn.active')?.dataset.m;
+  if(!method){showPayErr('Veuillez choisir un mode de paiement.');return;}
+  if(method==='card'){
+    const num=document.getElementById('card-num').value.replace(/\s/g,'');
+    const exp=document.getElementById('card-exp').value;
+    const cvv=document.getElementById('card-cvv').value;
+    const nm=document.getElementById('card-nm').value.trim();
+    if(num.length<15){showPayErr('Numéro de carte invalide.');return;}
+    if(!/^\d{2}\/\d{2}$/.test(exp)){showPayErr("Date d'expiration invalide.");return;}
+    if(cvv.length<3){showPayErr('CVV invalide.');return;}
+    if(!nm){showPayErr('Saisir le nom du titulaire.');return;}
+    // 🔌 INTÉGRER API ICI
+  }
+  const orderId='#'+Date.now().toString().slice(-6);
+  const brLabel=selBranchNum===1?CONFIG.branch1.name:CONFIG.branch2.name;
+  const ctx=orderType==='surplace'?`Table N°${tableNum}`:distType==='pickup'?'À emporter':'Livraison';
+  const phone=distType==='pickup'?document.getElementById('pickup-phone').value:distType==='delivery'?document.getElementById('del-phone').value:'';
+  let msg=`Commande ${orderId}\n🏪 ${brLabel}\n📦 ${ctx}\n💳 ${method==='cash'?'Espèces':'Carte'}\n💰 ${totalPrice()} ${CONFIG.currency}`;
+  if(phone)msg+=`\n📞 ${phone}`;
+  // Save order
+  const orders=JSON.parse(sessionStorage.getItem('_orders')||'[]');
+  orders.push({id:orderId,branch:brLabel,ctx,type:orderType==='surplace'?'surplace':distType,method:method==='cash'?'Espèces':'Carte',total:totalPrice(),phone,items:Object.entries(cart).map(([k,v])=>`${v.names.fr||k}×${v.qty}`).join(', '),time:new Date().toLocaleTimeString('fr',{hour:'2-digit',minute:'2-digit'})});
+  sessionStorage.setItem('_orders',JSON.stringify(orders));
+  document.getElementById('p-confirm-msg').textContent=msg;
+  cart={};updateCartBar();goStep(3);renderMenu();
+}
+
+/* ══ WIFI CHECK ══ */
+window._locAddr='';
+function checkWifi(cb){
+  if(navigator.connection){const t=navigator.connection.type||navigator.connection.effectiveType;if(t==='cellular'||t==='4g'||t==='3g'){cb(false);return;}}
+  cb(true); // In production: fetch local router IP to confirm
+}
+
+/* ══ DELIVERY MAP ══ */
+function initDelivMap(lat,lng){
+  if(delivMapInst){delivMapInst.remove();delivMapInst=null;}
+  delivMapInst=L.map('delivery-map',{zoomControl:true}).setView([lat,lng],16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(delivMapInst);
+  const ico=L.divIcon({html:'<div style="font-size:26px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))">📍</div>',iconAnchor:[13,30],className:''});
+  delivMrk=L.marker([lat,lng],{draggable:true,icon:ico}).addTo(delivMapInst);
+  delivMrk.on('dragend',function(){
+    const p=delivMrk.getLatLng();window._locAddr='';
+    document.getElementById('loc-save-btn').disabled=false;
+    document.getElementById('addr-coords').textContent=`${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
+    revGeocode(p.lat,p.lng);
+  });
+  document.getElementById('addr-coords').textContent=`${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  revGeocode(lat,lng);
+}
+function revGeocode(lat,lng){
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=fr`)
+    .then(r=>r.json()).then(d=>{window._locAddr=d.display_name||`${lat},${lng}`;document.getElementById('addr-txt').textContent=window._locAddr;})
+    .catch(()=>{window._locAddr=`${lat.toFixed(5)},${lng.toFixed(5)}`;document.getElementById('addr-txt').textContent=window._locAddr;});
+}
+function saveLocation(){const btn=document.getElementById('loc-save-btn');btn.disabled=true;btn.innerHTML='✅ Sauvegardée';}
+function useMyLocation(){
+  const btn=document.getElementById('locate-btn'),ico=document.getElementById('loc-ico'),lbl=document.getElementById('loc-lbl');
+  if(!navigator.geolocation){showErr('err-1','Non supporté.');return;}
+  btn.disabled=true;ico.textContent='⏳';lbl.textContent='Localisation...';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const lat=pos.coords.latitude,lng=pos.coords.longitude;
+      if(delivMapInst&&delivMrk){delivMapInst.setView([lat,lng],17);delivMrk.setLatLng([lat,lng]);}
+      else initDelivMap(lat,lng);
+      window._locAddr='';document.getElementById('loc-save-btn').disabled=false;
+      document.getElementById('addr-coords').textContent=`${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      revGeocode(lat,lng);ico.textContent='✅';lbl.textContent='Ma position';btn.disabled=false;
+    },
+    ()=>{btn.disabled=false;ico.textContent='📍';lbl.textContent='Ma position';}
+  );
+}
+
+/* ══ ADMIN ══ */
+function checkAdminRoute(){if(window.location.hash==='#/admin'){document.getElementById('admin-overlay').classList.add('open');if(adminLoggedIn)showAdmDash();else showAdmLogin();}}
+function showAdmLogin(){document.getElementById('adm-login').style.display='block';document.getElementById('adm-dashboard').style.display='none';}
+function showAdmDash(){document.getElementById('adm-login').style.display='none';document.getElementById('adm-dashboard').style.display='block';refreshAdmin();}
+function closeAdmin(){window.location.hash='';document.getElementById('admin-overlay').classList.remove('open');}
+function checkPass(){
+  if(document.getElementById('adm-pass').value===CONFIG.admin_pass){adminLoggedIn=true;document.getElementById('adm-pass').value='';showAdmDash();}
+  else{document.getElementById('adm-err').style.display='block';setTimeout(()=>document.getElementById('adm-err').style.display='none',2500);}
+}
+document.getElementById('adm-pass').addEventListener('keydown',e=>{if(e.key==='Enter')checkPass();});
+document.getElementById('admin-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('admin-overlay'))closeAdmin();});
+function admTab(t){
+  ['orders','security','look'].forEach(k=>{
+    document.getElementById('adm-tab-'+k).classList.toggle('active',k===t);
+    document.getElementById('adm-content-'+k).classList.toggle('active',k===t);
+  });
+  if(t==='orders')renderAdminOrders();
+}
+function admFilter(f){
+  currentAdmFilter=f;
+  ['all','sp','del','pu'].forEach(k=>document.getElementById('af-'+k).style.cssText='');
+  const active=document.getElementById('af-'+{all:'all',surplace:'sp',delivery:'del',pickup:'pu'}[f]||'af-all');
+  if(active){active.style.background='var(--accent)';active.style.color='#0f0d0a';active.style.border='none';}
+  renderAdminOrders();
+}
+function refreshAdmin(){renderAdminOrders();}
+function renderAdminOrders(){
+  const all=JSON.parse(sessionStorage.getItem('_orders')||'[]');
+  let orders=[...all].reverse();
+  if(currentAdmFilter==='surplace')orders=orders.filter(o=>o.type==='surplace');
+  else if(currentAdmFilter==='delivery')orders=orders.filter(o=>o.type==='delivery');
+  else if(currentAdmFilter==='pickup')orders=orders.filter(o=>o.type==='pickup');
+  document.getElementById('adm-order-count').textContent=`${all.length} commande${all.length!==1?'s':''} au total`;
+  if(!orders.length){document.getElementById('adm-orders-list').innerHTML='<div style="text-align:center;padding:2rem;font-size:12px;color:var(--text3)">Aucune commande</div>';return;}
+  document.getElementById('adm-orders-list').innerHTML=orders.map(o=>`
+    <div class="order-card${o.id&&Date.now()-parseInt('1'+o.id.slice(1))<600000?' new-order':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+        <span style="font-size:13px;font-weight:800;color:var(--accent)">${o.id}</span>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <span style="font-size:10px;color:var(--text3)">${o.time}</span>
+          <span style="font-size:14px;font-weight:800;color:var(--text)">${o.total} ${CONFIG.currency}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.4rem;">
+        <span style="background:var(--accent-dim);color:var(--accent);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.3px;">🏪 ${o.branch}</span>
+        <span style="background:var(--bg3);color:var(--text2);font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;">${o.ctx}</span>
+        <span style="background:var(--bg3);color:var(--text2);font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;">💳 ${o.method}</span>
+      </div>
+      <div style="font-size:10px;color:var(--text2);line-height:1.4;">${o.items}</div>
+      ${o.phone?`<div style="font-size:9px;color:var(--text3);margin-top:2px;">📞 ${o.phone}</div>`:''}
+    </div>`).join('');
+}
+function clearOrders(){if(!confirm('Vider toutes les commandes ?'))return;sessionStorage.removeItem('_orders');renderAdminOrders();}
+</script>
+</body>
+</html>
